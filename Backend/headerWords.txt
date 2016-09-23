@@ -1,0 +1,10 @@
+sunday
+monday
+tuesday
+wednesday
+thursday
+friday
+saturday
+game
+gameday
+happy hour
