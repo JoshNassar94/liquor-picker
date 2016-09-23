@@ -1,12 +1,17 @@
 import urllib2
 from bs4 import BeautifulSoup
 import bs4
+import urlparse
+import MySQLdb
 
-
-#Something else that needs to be considered is that deals will not always be on the home page...need a way to figure that one out.
-#I wonder if beautifulsoup has a way to go to the different pages of a website....
-#If not, I could look for specific words as links and go to those pages...could prove to be even more difficult, though.
 #GLOBALS
+hostname = "seniordesigninstance.c2zrygvejuhn.us-east-1.rds.amazonaws.com"
+username = "SeniorDesign"
+password = "JoshAndAlan"
+database = "liquor_picker"
+port = 3306
+connection = MySQLdb.connect(host=hostname, user=username, passwd=password, db=database, port=port)  # 2
+cursor = connection.cursor()
 
 
 
@@ -57,6 +62,7 @@ def lineIncludes(line, str):
     return False;
 
 
+
 #Helper to remove empty lines
 def removeEmptyLines(lines):
     while '' in lines:
@@ -78,7 +84,7 @@ def getVisibleText(element):
 def removeDoubleHeaders(text, headerLines, keywordLines):
     indices = list()
     for line in headerLines:
-        if len(text[line]) >= 12 or (line+1 not in headerLines and line+1 in keywordLines):
+        if keywordLines.count(line) > 1 or (line+1 not in headerLines and line+1 in keywordLines):
             indices.append(line)
         elif line in keywordLines:
             keywordLines.remove(line)
@@ -99,7 +105,8 @@ def getModifiedText(text):
     pageText = ''.join(visible)
     lowercaseText = pageText.lower()
     lowercaseText = lowercaseText.split('\n')
-    return removeEmptyLines(lowercaseText)
+    pageText = pageText.split('\n')
+    return removeEmptyLines(lowercaseText), removeEmptyLines(pageText)
 
 #Returns the keywords and headerWords
 def readFiles():
@@ -108,24 +115,65 @@ def readFiles():
     return keywords, headerWords
 
 
+#Function that is called on each URL to actually find the deals on that page
+def findDeals(url, deals):
+    print "Finding deals for " + url
+
+    try:
+        page = urllib2.urlopen(url)
+        soup = BeautifulSoup(page, "lxml")
+        text = soup.findAll(text=True)
+        lowercaseText, pageText = getModifiedText(text)
+        keywords, headerWords = readFiles()
+        headerLines, keyLines = getLines(lowercaseText, keywords, headerWords)
+
+        for line in headerLines:
+            newDeal = pageText[line] + "\n"
+            header = pageText[line]
+            index = line + 1
+            while index in keyLines and index not in headerLines:
+                newDeal += pageText[index] + "\n"
+                index = index + 1
+            deals.append(newDeal)
+            headers.append(header)
+    except urllib2.HTTPError, e:
+        print e.code
+        print e.msg
+
+
+#Gets all the bars from the sql table
+def getBars():
+    cursor.execute("Select * from Bars;")
+    data = cursor.fetchall()
+    return data
+
 
 #MAIN
-#page = urllib2.urlopen("http://www.doughreligion.com")
-#page = urllib2.urlopen("http://www.motherspub.com/specials")
-page = urllib2.urlopen("http://www.durtynellys.us/specials")
+bars = getBars()
+for row in bars:
+    print row[2]    #Prints all the bar websites
+
+#Need to iterate through the bars and then save off the deals for each one in the Deals db
+
+url = "http://www.durtynellys.us"
+page = urllib2.urlopen(url)
 soup = BeautifulSoup(page, "lxml")
-text = soup.findAll(text=True)
-lowercaseText = getModifiedText(text)
-keywords, headerWords = readFiles()
-headerLines, keyLines = getLines(lowercaseText, keywords, headerWords)
+deals = list()
+headers = list()
 
+#Find all the different links on the homepage. Use those to find the deals.
+alreadyDone = list()
+for tag in soup.findAll('a', href=True):
+    newURL = urlparse.urljoin(url, tag['href'])
+    if url in newURL:
+        if newURL not in alreadyDone and ".pdf" not in newURL:
+            #findDeals(newURL, deals)
+            alreadyDone.append(newURL)
 
-for line in headerLines:
-    print lowercaseText[line]
-    index = line + 1
-    while index in keyLines and index not in headerLines:
-        print lowercaseText[index]
-        index = index + 1
+for index, deal in enumerate(deals):
+    print headers[index]
+    print deal
 
-    print "-----------------------------------------------------------------"
-
+cursor.close()
+connection.commit()
+connection.close()
