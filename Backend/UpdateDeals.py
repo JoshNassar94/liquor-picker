@@ -3,14 +3,13 @@ from bs4 import BeautifulSoup
 import bs4
 
 #ANOTHER IDEA
-#Get all of the text and separate it by new lines into an array of strings
-#Parse through the strings looking for key words and then separate into blocks of text
-#Block 1 starts at the first key word and continues until it hits the line with the next keyword
 #Once I have these blocks, try to figure out a way to remove lines that have no important information on them
 #The remaining blocks should be deals
 #If I find a day, there can only be one deal with that day. So if I find Tuesday listed twice, only the first one counts. This does not apply to other keywords.
 #Have some sort of ratio of keywords to length of string to decide if a given string is valid
 #Maybe recursively search blocks after breaking them down?
+#Look for the hours and try to remove the lines immediately following that
+#Rows that include a day of the week or the word game should be marked as headers. If two headers are right up against each other, we should only count the first one
 
 
 #Search the string for a given thing (Ladies night, BOGO, dollar signs, etc.)
@@ -68,16 +67,64 @@ def searchForDays(text):
     indices = [0]
     for day in days:
         newIndex = getIndexFromKeyword(text, day)
-        indices.append(getStartOfLineFromIndex(text, newIndex))
+        if newIndex != -1:
+            indices.append(getStartOfLineFromIndex(text, newIndex))
 
     indices = sorted(indices)
     lastIndex = 0
     for index in indices:
         if lastIndex != 0:
             print text[lastIndex: index]
+            print "--------------------------------------------------------------"
+            x=1
         lastIndex = index
-    #print text[lastIndex:]
+    print text[lastIndex:]
+    print "======================================================================="
+    if lastIndex != 0:
+        searchForDays(text[lastIndex:])
     return indices
+
+
+def getLinesWithKeywords(lines, keywords):
+    indices = list()
+    for index, line in enumerate(lines):
+        for word in keywords:
+            if lineIncludes(line, word):
+                indices.append(index)
+    #return getDistinctList(indices)
+    return indices
+
+
+def getSpecialLines(lines, keywords):
+    indices = list()
+    for index, line in enumerate(lines):
+        for word in keywords:
+            if lineIncludes(line, word):
+                indices.append(index)
+    return getDistinctList(indices)
+
+
+def getDistinctList(list):
+    seen = set()
+    result = []
+    for item in list:
+        if item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
+def lineIncludes(line, str):
+    if getIndexFromKeyword(line, str) != -1 and getIndexFromKeyword(line, 'website') == -1:
+        return True;
+    return False;
+
+
+def removeEmptyLines(lines):
+    while '' in lines:
+        lines.remove('')
+    return lines
+
 
 
 #Helper to clean up the HTML
@@ -90,12 +137,33 @@ def getVisibleText(element):
 
 
 #MAIN
-page = urllib2.urlopen("http://www.doughreligion.com")
+#page = urllib2.urlopen("http://www.doughreligion.com")
+page = urllib2.urlopen("http://www.motherspub.com/specials")
 soup = BeautifulSoup(page, "lxml")
 text = soup.findAll(text=True)
 visible = filter(getVisibleText, text)
 pageText = ''.join(visible)
-#print pageText
 lowercaseText = pageText.lower()
+lowercaseText = lowercaseText.split('\n')
+lowercaseText = removeEmptyLines(lowercaseText)
+keywords = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'special', 'bogo', 'free', 'happy hour', '$', 'pm', ' am', 'am ', 'beer', 'maragrita', 'ladies', 'half', 'drink', 'pitcher', 'draft', 'hours']
+specialWords = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'game', 'gameday']
+keyLines = getLinesWithKeywords(lowercaseText, keywords)
+specialLines = getSpecialLines(lowercaseText, specialWords)
+for line in keyLines:
+    print lowercaseText[line]
+print keyLines
+print specialLines
 
-searchForDays(lowercaseText)
+#Instead of running through specialLines, run through keyLines
+#If it matches up with specialLines, then it is the start of a new header
+#This way, we can get those things that aren't under a day of the week
+#Not sure if this will work, but it could be worth trying
+for line in specialLines:
+    print lowercaseText[line]
+    index = line + 1
+    while index in keyLines and index not in specialLines:
+        print lowercaseText[index]
+        index = index + 1
+
+    print "-----------------------------------------------------------------"

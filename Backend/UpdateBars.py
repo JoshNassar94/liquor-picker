@@ -16,7 +16,7 @@ google_places = GooglePlaces(API_KEY)
 #FUNCTIONS
 def getBars():
     query_result = google_places.nearby_search(
-        lat_lng={'lat': 29.652407, 'lng': -82.343554},
+        lat_lng={'lat': 29.651762, 'lng': -82.325344},
         radius=1000, types=[types.TYPE_BAR]
     )
 
