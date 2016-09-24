@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 import bs4
 import urlparse
 import MySQLdb
-import time
 
 #GLOBALS
 urlHeader = {'User-Agent' : 'liquor-picker bot trying to steal yo deals by /u/josh'}
@@ -12,7 +11,9 @@ username = "SeniorDesign"
 password = "JoshAndAlan"
 database = "liquor_picker"
 port = 3306
-connection = MySQLdb.connect(host=hostname, user=username, passwd=password, db=database, port=port)  # 2
+print "Connecting to database: " + database + "..."
+connection = MySQLdb.connect(host=hostname, user=username, passwd=password, db=database, port=port)
+print "Connected!"
 cursor = connection.cursor()
 
 
@@ -121,7 +122,6 @@ def readFiles():
 #Function that is called on each URL to actually find the deals on that page
 def findDeals(url, deals, keywords, headerWords):
     print "Finding deals for " + url
-    f.write("Finding deals for " + url.encode('ascii', 'ignore') + "\n")
 
     try:
         req = urllib2.Request(url, headers=urlHeader)
@@ -152,14 +152,18 @@ def getBars():
     return data
 
 
+def removeNonAscii(text):
+    return ''.join([i if ord(i) < 128 else ' ' for i in text])
+
 #MAIN
+print "Retrieving bars from database..."
 bars = getBars()
+print "Bars received!"
 keywords, headerWords, badWords = readFiles()
-f = open('out.txt', 'w')
+j = 0
+print "Starting to search for deals..."
 for row in bars:
     url = str(row[2])
-    #url = "http://bocafiesta.com"
-    #url = "http://www.midnightgainesville.com/"
     if "http" in url:
         try:
             req = urllib2.Request(url, headers=urlHeader)
@@ -176,19 +180,29 @@ for row in bars:
                     goodURL = True
                     for word in badWords:
                         if word in newURL.lower():
-                            goodURL = False;
+                            goodURL = False
                     if goodURL == True:
                         findDeals(newURL, deals, keywords, headerWords)
                         alreadyDone.append(newURL)
-                        #time.sleep(1)
 
             for index, deal in enumerate(deals):
-                #print headers[index]
-                f.write(deal.encode('ascii', 'ignore') + "\n")
+                #THIS IS WHERE I ADD THEM TO THE DATABASE
+                headers[index] = removeNonAscii(headers[index])
+                deal = removeNonAscii(deal)
+                dealID = deal
+                valid = True
+                if len(deal) >= 255:
+                    dealID = deal[0:255]
+                cursor.execute("INSERT IGNORE into Deals VALUES(%s, %s, %s, %s, %s)", (dealID, deal, headers[index], row[0], valid))
         except urllib2.HTTPError, e:
             print e.code
             print e.msg
 
+print "Done seraching for deals!"
 cursor.close()
+
 connection.commit()
+print "Pushed queries to database!"
+
 connection.close()
+print "Closed connection to database!"
