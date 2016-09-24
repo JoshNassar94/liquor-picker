@@ -3,8 +3,10 @@ from bs4 import BeautifulSoup
 import bs4
 import urlparse
 import MySQLdb
+import time
 
 #GLOBALS
+urlHeader = {'User-Agent' : 'liquor-picker bot trying to steal yo deals by /u/josh'}
 hostname = "seniordesigninstance.c2zrygvejuhn.us-east-1.rds.amazonaws.com"
 username = "SeniorDesign"
 password = "JoshAndAlan"
@@ -112,19 +114,21 @@ def getModifiedText(text):
 def readFiles():
     keywords = [line.rstrip('\n') for line in open('keywords.txt')]
     headerWords = [line.rstrip('\n') for line in open('headerWords.txt')]
-    return keywords, headerWords
+    badWords = [line.rstrip('\n') for line in open('badWords.txt')]
+    return keywords, headerWords, badWords
 
 
 #Function that is called on each URL to actually find the deals on that page
-def findDeals(url, deals):
+def findDeals(url, deals, keywords, headerWords):
     print "Finding deals for " + url
+    f.write("Finding deals for " + url.encode('ascii', 'ignore') + "\n")
 
     try:
-        page = urllib2.urlopen(url)
+        req = urllib2.Request(url, headers=urlHeader)
+        page = urllib2.urlopen(req).read()
         soup = BeautifulSoup(page, "lxml")
         text = soup.findAll(text=True)
         lowercaseText, pageText = getModifiedText(text)
-        keywords, headerWords = readFiles()
         headerLines, keyLines = getLines(lowercaseText, keywords, headerWords)
 
         for line in headerLines:
@@ -150,29 +154,40 @@ def getBars():
 
 #MAIN
 bars = getBars()
+keywords, headerWords, badWords = readFiles()
+f = open('out.txt', 'w')
 for row in bars:
-    print row[2]    #Prints all the bar websites
+    url = str(row[2])
+    #url = "http://bocafiesta.com"
+    #url = "http://www.midnightgainesville.com/"
+    if "http" in url:
+        try:
+            req = urllib2.Request(url, headers=urlHeader)
+            page = urllib2.urlopen(req).read()
+            soup = BeautifulSoup(page, "lxml")
+            deals = list()
+            headers = list()
 
-#Need to iterate through the bars and then save off the deals for each one in the Deals db
+            #Find all the different links on the homepage. Use those to find the deals.
+            alreadyDone = list()
+            for tag in soup.findAll('a', href=True):
+                newURL = urlparse.urljoin(url, tag['href'])
+                if url in newURL and newURL not in alreadyDone:
+                    goodURL = True
+                    for word in badWords:
+                        if word in newURL.lower():
+                            goodURL = False;
+                    if goodURL == True:
+                        findDeals(newURL, deals, keywords, headerWords)
+                        alreadyDone.append(newURL)
+                        #time.sleep(1)
 
-url = "http://www.durtynellys.us"
-page = urllib2.urlopen(url)
-soup = BeautifulSoup(page, "lxml")
-deals = list()
-headers = list()
-
-#Find all the different links on the homepage. Use those to find the deals.
-alreadyDone = list()
-for tag in soup.findAll('a', href=True):
-    newURL = urlparse.urljoin(url, tag['href'])
-    if url in newURL:
-        if newURL not in alreadyDone and ".pdf" not in newURL:
-            #findDeals(newURL, deals)
-            alreadyDone.append(newURL)
-
-for index, deal in enumerate(deals):
-    print headers[index]
-    print deal
+            for index, deal in enumerate(deals):
+                #print headers[index]
+                f.write(deal.encode('ascii', 'ignore') + "\n")
+        except urllib2.HTTPError, e:
+            print e.code
+            print e.msg
 
 cursor.close()
 connection.commit()

@@ -11,9 +11,6 @@ free
 happy hour
 $
 %
-pm
- am
-am
 beer
 margarita
 ladies

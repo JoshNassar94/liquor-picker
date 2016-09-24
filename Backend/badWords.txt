@@ -1,0 +1,16 @@
+pdf
+facebook
+image
+img
+photo
+png
+jpg
+jpeg
+gif
+contact
+about
+gallery
+yelp
+latlon
+respond
+rss
