@@ -8,30 +8,50 @@ username = "SeniorDesign"
 password = "JoshAndAlan"
 database = "liquor_picker"
 port = 3306
-connection = MySQLdb.connect(host=hostname, user=username, passwd=password, db=database, port=port)  # 2
+startingLat = 29.651762
+startingLon = -82.325344
+coordDiff = 0.03
+coordStep = 0.005
+
+print "Connecting to database: " + database + "..."
+connection = MySQLdb.connect(host=hostname, user=username, passwd=password, db=database, port=port)
+print "Connected!"
 cursor = connection.cursor()
+print "Connecting to Google API..."
 google_places = GooglePlaces(API_KEY)
+print "Connected!"
+
+
 
 
 #FUNCTIONS
+
+#This function runs across a given range of coordinates and finds all the bars in that area
+#Since Google can only return <=20 results for each query, we have to keep the distance difference small
 def getBars():
-    query_result = google_places.nearby_search(
-        lat_lng={'lat': 29.651762, 'lng': -82.325344},
-        radius=1000, types=[types.TYPE_BAR]
-    )
+    count = 0
+    total = int((2*coordDiff/coordStep) * (2*coordDiff/coordStep))
+    alreadyFound = set()
+    for x in my_range(-coordDiff, coordDiff, coordStep):
+        for y in my_range(-coordDiff, coordDiff, coordStep):
+            count += 1
+            latitude = startingLat + x
+            longitude = startingLon + y
+            query_result = google_places.nearby_search(
+                lat_lng={'lat': latitude, 'lng': longitude},
+                radius=1000, types=[types.TYPE_BAR, types.TYPE_NIGHT_CLUB]
+            )
+            print "Searching at (" + str(latitude) + ", " + str(longitude) + ") : " + str(count) + "/" + str(total)
 
-    if query_result.has_attributions:
-        print query_result.html_attributions
+            for place in query_result.places:
+                if place.place_id not in alreadyFound:
+                    print place.name
+                    place.get_details()
+                    insertIntoDB(place)
+                    alreadyFound.add(place.place_id)
 
-    for place in query_result.places:
-        print place.name
-        place.get_details()
-        insertIntoDB(place)
 
-    cursor.close()
-    connection.commit()
-    connection.close()
-
+#This function inserts a place into our database
 def insertIntoDB(place):
     latitude = str(place.geo_location['lat'])
     longitude = str(place.geo_location['lng'])
@@ -39,24 +59,22 @@ def insertIntoDB(place):
                 (place.place_id, place.name, place.website, latitude, longitude, place.website))
 
 
+#This function works in my for loops to use non-integer ranges and steps
+def my_range(start, end, step):
+    while start <= end:
+        yield start
+        start += step
+
+
 #MAIN
+print "Searching for bars..."
 getBars()
 
+print "Retrieved all the bars!"
+cursor.close()
 
+connection.commit()
+print "Pushed queries to database!"
 
-
-
-
-#EXAMPLE CODE TO SAVE FOR LATER
-# cursor.execute("create table lfy(name varchar(40), author varchar(40))")  #4
-# cursor.execute("insert into lfy values('Foss Bytes','LFY Team')")         #5
-# cursor.execute("insert into lfy values('Connecting MySql','Ankur Aggarwal')")
-# cursor.execute("select * from lfy")                  #6
-# multiplerow=cursor.fetchall()                        #7
-# print "Displaying All the Rows:  ", multiplerow
-# print multiplerow[0]
-# cursor.execute("select * from lfy")
-# row=cursor.fetchone()                                #8
-# print  "Displaying the first row: ", row
-# print "No of rows: ", cursor.rowcount                #9
-
+connection.close()
+print "Closed connection to database!"
