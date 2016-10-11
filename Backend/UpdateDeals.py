@@ -2,21 +2,12 @@ import urllib2
 from bs4 import BeautifulSoup
 import bs4
 import urlparse
-import MySQLdb
+import requests
+import json
 
 #GLOBALS
 urlHeader = {'User-Agent' : 'liquor-picker bot trying to steal yo deals by /u/josh'}
-hostname = "seniordesigninstance.c2zrygvejuhn.us-east-1.rds.amazonaws.com"
-username = "SeniorDesign"
-password = "JoshAndAlan"
-database = "liquor_picker"
-port = 3306
-print "Connecting to database: " + database + "..."
-connection = MySQLdb.connect(host=hostname, user=username, passwd=password, db=database, port=port)
-print "Connected!"
-cursor = connection.cursor()
-
-
+sqlURL = "https://cise.ufl.edu/~jnassar/liquor-picker/updateDeals.php"
 
 #FUNCTIONS
 
@@ -147,9 +138,8 @@ def findDeals(url, deals, keywords, headerWords):
 
 #Gets all the bars from the sql table
 def getBars():
-    cursor.execute("Select * from Bars;")
-    data = cursor.fetchall()
-    return data
+    r = requests.get(url = "http://cise.ufl.edu/~jnassar/liquor-picker/getBars.php", headers=urlHeader)
+    return json.loads(r.text)
 
 
 def removeNonAscii(text):
@@ -163,7 +153,7 @@ keywords, headerWords, badWords = readFiles()
 j = 0
 print "Starting to search for deals..."
 for row in bars:
-    url = str(row[2])
+    url = str(row['Website'])
     if "http" in url:
         try:
             req = urllib2.Request(url, headers=urlHeader)
@@ -193,16 +183,11 @@ for row in bars:
                 valid = True
                 if len(deal) >= 255:
                     dealID = deal[0:255]
-                cursor.execute("INSERT IGNORE into Deals VALUES(%s, %s, %s, %s, %s)", (dealID, deal, headers[index], row[0], valid))
+                payload = {'id': dealID, 'deal': deal, 'header': headers[index], 'barID': row['idBars'], 'valid': valid}
+                requests.post(sqlURL, data=payload, headers=urlHeader)
+
         except urllib2.HTTPError, e:
             print e.code
             print e.msg
 
-print "Done seraching for deals!"
-cursor.close()
-
-connection.commit()
-print "Pushed queries to database!"
-
-connection.close()
-print "Closed connection to database!"
+print "Done searching for deals!"

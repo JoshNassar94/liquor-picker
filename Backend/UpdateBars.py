@@ -1,22 +1,14 @@
-from googleplaces import GooglePlaces, types, lang
-import MySQLdb
+from googleplaces import GooglePlaces, types
+import requests
 
 #GLOBALS
 API_KEY = 'AIzaSyDMGi7ufEqMurcKKJHXDkpgqU5JqIl1JBY'
-hostname = "seniordesigninstance.c2zrygvejuhn.us-east-1.rds.amazonaws.com"
-username = "SeniorDesign"
-password = "JoshAndAlan"
-database = "liquor_picker"
-port = 3306
+url = "http://cise.ufl.edu/~jnassar/liquor-picker/updateBars.php"
 startingLat = 29.651762
 startingLon = -82.325344
 coordDiff = 0.03
 coordStep = 0.005
 
-print "Connecting to database: " + database + "..."
-connection = MySQLdb.connect(host=hostname, user=username, passwd=password, db=database, port=port)
-print "Connected!"
-cursor = connection.cursor()
 print "Connecting to Google API..."
 google_places = GooglePlaces(API_KEY)
 print "Connected!"
@@ -55,8 +47,8 @@ def getBars():
 def insertIntoDB(place):
     latitude = str(place.geo_location['lat'])
     longitude = str(place.geo_location['lng'])
-    cursor.execute("INSERT into Bars VALUES(%s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE website = %s",
-                (place.place_id, place.name, place.website, latitude, longitude, place.website))
+    payload = {'id':place.place_id, 'name':place.name, 'website':place.website, 'lat':latitude, 'lon':longitude}
+    requests.post(url, data=payload)
 
 
 #This function works in my for loops to use non-integer ranges and steps
@@ -71,10 +63,3 @@ print "Searching for bars..."
 getBars()
 
 print "Retrieved all the bars!"
-cursor.close()
-
-connection.commit()
-print "Pushed queries to database!"
-
-connection.close()
-print "Closed connection to database!"
