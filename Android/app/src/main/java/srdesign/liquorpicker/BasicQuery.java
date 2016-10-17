@@ -12,10 +12,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class QueryBars extends AsyncTask<String,Void,String> {
+public class BasicQuery extends AsyncTask<String,Void,String> {
 
     private String result;
-    public QueryBars(){
+    public BasicQuery(){
     }
 
     @Override
@@ -54,7 +54,7 @@ public class QueryBars extends AsyncTask<String,Void,String> {
         return null;
     }
 
-    String getBars(){
+    String getContent(){
         return result;
     }
 }

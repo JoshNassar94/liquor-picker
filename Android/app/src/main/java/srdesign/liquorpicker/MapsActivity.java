@@ -10,21 +10,26 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.HashMap;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
@@ -34,6 +39,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private LocationRequest mLocationRequest;
     private JSONArray mBars;
+    private HashMap<String, String> barMap;
+    private Marker myMarker = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +63,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(10 * 1000)        // 10 seconds, in milliseconds
                 .setFastestInterval(1 * 1000); // 1 second, in milliseconds
-
+        barMap = new HashMap<>();
         getBarsJSON(intent.getStringExtra("BARS"));
     }
 
@@ -116,6 +123,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void handleNewLocation(Location location) {
+        if(myMarker != null)
+            myMarker.remove();
         Log.d(TAG, location.toString());
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
@@ -123,7 +132,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         MarkerOptions options = new MarkerOptions()
                 .position(latLng)
                 .title("I am here!");
-        mMap.addMarker(options);
+        options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
+        myMarker = mMap.addMarker(options);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0f));
     }
 
@@ -149,14 +159,47 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Double lat = Double.parseDouble(jObject.getString("Lat"));
                 Double lon = Double.parseDouble(jObject.getString("Lon"));
                 LatLng latLng = new LatLng(lat, lon);
+                String website = jObject.getString("Website");
+                String idBars = jObject.getString("idBars");
+                String name = jObject.getString("Name");
+                if(!website.equals(""))
+                    barMap.put(website, idBars);
                 MarkerOptions options = new MarkerOptions()
                         .position(latLng)
-                        .title(jObject.getString("Name"));
+                        .snippet(website)
+                        .title(name);
                 mMap.addMarker(options);
+                mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener(){
+                    @Override
+                    public void onInfoWindowClick(Marker marker) {
+                        if(!marker.getTitle().equals("I am here!"))
+                            MapsActivity.this.sendMessage(marker);
+                    }
+                });
             }
         }
         catch(Exception e){
             e.printStackTrace();
         }
+    }
+
+    public void sendMessage(Marker marker) {
+        Intent intent = new Intent(this, DealsList.class);
+        String id = barMap.get(marker.getSnippet());
+        String query = null;
+
+        //Get all of the deals for this bar
+        BasicQuery dealQuery = new BasicQuery();
+        query = "http://cise.ufl.edu/~jnassar/liquor-picker/getDeals.php?id=" + id + "&valid=0";
+        dealQuery.execute(query);
+
+        String deals = null;
+        do {
+            deals = dealQuery.getContent();
+        }while(deals == null);
+
+        intent.putExtra("Deals", deals);
+        intent.putExtra("Title", marker.getTitle());
+        startActivity(intent);
     }
 }
