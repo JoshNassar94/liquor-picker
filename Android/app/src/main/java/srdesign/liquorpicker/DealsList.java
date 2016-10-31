@@ -1,9 +1,12 @@
 package srdesign.liquorpicker;
 
 import android.content.Intent;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Window;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -17,6 +20,7 @@ import org.json.JSONObject;
 
 public class DealsList extends AppCompatActivity {
     private String mDeals = null;
+    private BasicQuery barQuery;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,5 +59,4 @@ public class DealsList extends AppCompatActivity {
             textView.setText("No deals here!");
         }
     }
-
 }

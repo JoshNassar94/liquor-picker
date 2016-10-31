@@ -162,20 +162,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 String website = jObject.getString("Website");
                 String idBars = jObject.getString("idBars");
                 String name = jObject.getString("Name");
-                if(!website.equals(""))
-                    barMap.put(website, idBars);
-                MarkerOptions options = new MarkerOptions()
-                        .position(latLng)
-                        .snippet(website)
-                        .title(name);
-                mMap.addMarker(options);
-                mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener(){
-                    @Override
-                    public void onInfoWindowClick(Marker marker) {
-                        if(!marker.getTitle().equals("I am here!"))
-                            MapsActivity.this.sendMessage(marker);
-                    }
-                });
+                int count = Integer.parseInt(jObject.getString("DealCount"));
+                if(count > 0) {
+                    if (!website.equals(""))
+                        barMap.put(website, idBars);
+                    MarkerOptions options = new MarkerOptions()
+                            .position(latLng)
+                            .snippet(website)
+                            .title(name);
+                    mMap.addMarker(options);
+                    mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+                        @Override
+                        public void onInfoWindowClick(Marker marker) {
+                            if (!marker.getTitle().equals("I am here!"))
+                                MapsActivity.this.sendMessage(marker);
+                        }
+                    });
+                }
             }
         }
         catch(Exception e){
