@@ -43,7 +43,7 @@
         android:layout_toEndOf="@+id/thumbsUpView" />
 
     <TextView
-        android:id="@+id/downTextView"
+        android:id="@+id/upTextView"
         android:layout_gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -58,7 +58,7 @@
         android:layout_alignStart="@+id/thumbsUpView" />
 
     <TextView
-        android:id="@+id/upTextView"
+        android:id="@+id/downTextView"
         android:layout_gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
