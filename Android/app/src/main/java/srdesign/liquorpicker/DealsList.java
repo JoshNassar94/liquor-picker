@@ -1,21 +1,16 @@
 package srdesign.liquorpicker;
 
+import android.app.Activity;
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
-
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class DealsList extends AppCompatActivity {
+import java.util.Random;
+
+public class DealsList extends Activity {
     private String mDeals = null;
 
     @Override
@@ -25,35 +20,37 @@ public class DealsList extends AppCompatActivity {
         setContentView(R.layout.activity_deals_list);
         String title = intent.getStringExtra("Title");
         mDeals = intent.getStringExtra("Deals");
-
         listDeals();
     }
 
 
     private void listDeals(){
-        TextView textView = (TextView)findViewById(R.id.textView);
+        ListView lv=(ListView) findViewById(R.id.listView);
+        Random rand = new Random();
         JSONArray deals = null;
         String dealArray[] = null;
+        String upArray[] = null;
+        String downArray[] = null;
+        String dealID[] = null;
         try {
             deals = new JSONArray(mDeals);
             dealArray = new String[deals.length()];
+            upArray = new String[deals.length()];
+            downArray = new String[deals.length()];
+            dealID = new String[deals.length()];
             for (int i = 0; i < deals.length(); ++i) {
                 JSONObject jObject = deals.getJSONObject(i);
                 dealArray[i] = jObject.getString("Deal");
+                dealID[i] = jObject.getString("id");
+                upArray[i] = jObject.getString("UpVotes");
+                downArray[i] = jObject.getString("DownVotes");
             }
         }
         catch(Exception e){
             e.printStackTrace();
         }
         if(deals != null && deals.length() > 0) {
-            ListView listView = (ListView)findViewById(R.id.listView);
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, android.R.id.text1, dealArray);
-            listView.setAdapter(adapter);
-            textView.setText("");
-        }
-        else{
-            textView.setText("No deals here!");
+            lv.setAdapter(new CustomAdapter(this, dealArray, upArray, downArray, dealID));
         }
     }
-
 }
