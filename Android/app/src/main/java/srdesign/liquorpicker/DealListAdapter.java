@@ -10,6 +10,8 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 public class DealListAdapter extends BaseAdapter{
     String [] result;
     String [] upText;
@@ -86,10 +88,30 @@ public class DealListAdapter extends BaseAdapter{
                 barQuery = new BasicQuery();
                 String query = "http://cise.ufl.edu/~jnassar/liquor-picker/downvote.php?id=" + dealID[position];
                 barQuery.execute(query);
+
+                tv = (TextView)viewGroup.findViewById(R.id.upTextView);
+                int upVotes = Integer.parseInt(upText[position]);
+                int downVotes = votes;
+
+                if(upVotes == 0 && downVotes >= 15)
+                    markInvalid(position);
+                else if(upVotes > 0 && (downVotes+upVotes) > 20) {
+                    double ratio = (double)downVotes / (double)upVotes;
+                    if(ratio > 6)
+                        markInvalid(position);
+                }
             }
         });
 
         return rowView;
+    }
+
+    private void markInvalid(int pos){
+        String id = dealID[pos];
+        BasicQuery validQuery;
+        validQuery = new BasicQuery();
+        String query = "http://cise.ufl.edu/~jnassar/liquor-picker/markInvalid.php?id=" + id;
+        validQuery.execute(query);
     }
 
 }

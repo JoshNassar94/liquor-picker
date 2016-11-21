@@ -190,7 +190,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         //Get all of the deals for this bar
         BasicQuery dealQuery = new BasicQuery();
-        query = "http://cise.ufl.edu/~jnassar/liquor-picker/getDeals.php?id=" + id + "&valid=0";
+        query = "http://cise.ufl.edu/~jnassar/liquor-picker/getDeals.php?id=" + id;
         dealQuery.execute(query);
 
         String deals = null;
@@ -200,7 +200,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         //Get all the comments for this bar
         BasicQuery commentQuery = new BasicQuery();
-        query = "http://cise.ufl.edu/~jnassar/liquor-picker/getComments.php?id=" + id + "&valid=0";
+        query = "http://cise.ufl.edu/~jnassar/liquor-picker/getComments.php?id=" + id;
         commentQuery.execute(query);
 
         String comments = null;
