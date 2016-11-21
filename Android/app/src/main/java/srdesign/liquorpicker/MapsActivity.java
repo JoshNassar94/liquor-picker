@@ -78,6 +78,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.setInfoWindowAdapter(new MyInfoWindowAdapter(getLayoutInflater()));
     }
 
     @Override
@@ -88,6 +89,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
+        mMap.setMyLocationEnabled(true);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
@@ -129,11 +131,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
-        MarkerOptions options = new MarkerOptions()
-                .position(latLng)
-                .title("I am here!");
-        options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
-        myMarker = mMap.addMarker(options);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0f));
     }
 
@@ -201,8 +198,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             deals = dealQuery.getContent();
         }while(deals == null);
 
+        //Get all the comments for this bar
+        BasicQuery commentQuery = new BasicQuery();
+        query = "http://cise.ufl.edu/~jnassar/liquor-picker/getComments.php?id=" + id + "&valid=0";
+        commentQuery.execute(query);
+
+        String comments = null;
+        do {
+            comments = commentQuery.getContent();
+        }while(comments == null);
+
         intent.putExtra("Deals", deals);
-        intent.putExtra("Title", marker.getTitle());
+        intent.putExtra("Comments", comments);
+        intent.putExtra("BarID", id);
         startActivity(intent);
     }
 }
