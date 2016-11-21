@@ -78,6 +78,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.setInfoWindowAdapter(new MyInfoWindowAdapter(getLayoutInflater()));
     }
 
     @Override
@@ -197,8 +198,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             deals = dealQuery.getContent();
         }while(deals == null);
 
+        //Get all the comments for this bar
+        BasicQuery commentQuery = new BasicQuery();
+        query = "http://cise.ufl.edu/~jnassar/liquor-picker/getComments.php?id=" + id + "&valid=0";
+        commentQuery.execute(query);
+
+        String comments = null;
+        do {
+            comments = commentQuery.getContent();
+        }while(comments == null);
+
         intent.putExtra("Deals", deals);
-        intent.putExtra("Title", marker.getTitle());
+        intent.putExtra("Comments", comments);
+        intent.putExtra("BarID", id);
         startActivity(intent);
     }
 }

@@ -10,26 +10,20 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-public class CustomAdapter extends BaseAdapter{
-    String [] result;
-    String [] upText;
-    String [] downText;
-    String [] dealID;
+public class CommentListAdapter extends BaseAdapter{
+    String [] comment;
     Context context;
     private static LayoutInflater inflater=null;
 
-    public CustomAdapter(Activity mainActivity, String[] prgmNameList, String[] upTextList, String[] downTextList, String[] id) {
-        result=prgmNameList;
-        upText = upTextList;
-        downText = downTextList;
-        dealID = id;
+    public CommentListAdapter(Activity mainActivity, String[] comment) {
+        this.comment=comment;
         context=mainActivity;
         inflater = ( LayoutInflater )context.
                 getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
     @Override
     public int getCount() {
-        return result.length;
+        return comment.length;
     }
 
     @Override
@@ -45,20 +39,16 @@ public class CustomAdapter extends BaseAdapter{
     public class Holder
     {
         TextView tv;
-        ImageView img;
     }
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
         final Holder holder=new Holder();
         final View rowView;
-        rowView = inflater.inflate(R.layout.deals_layout, null);
-        holder.tv=(TextView) rowView.findViewById(R.id.dealView);
-        holder.tv.setText(result[position]);
-        holder.tv =(TextView) rowView.findViewById(R.id.upTextView);
-        holder.tv.setText(upText[position]);
-        holder.tv =(TextView) rowView.findViewById(R.id.downTextView);
-        holder.tv.setText(downText[position]);
+        rowView = inflater.inflate(R.layout.comments_layout, null);
+        holder.tv=(TextView) rowView.findViewById(R.id.comment);
+        holder.tv.setText(comment[position]);
 
+        /*
         ImageView img = (ImageView) rowView.findViewById(R.id.thumbsUpView);
         img.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
@@ -73,21 +63,7 @@ public class CustomAdapter extends BaseAdapter{
                 barQuery.execute(query);
             }
         });
-
-        img = (ImageView) rowView.findViewById(R.id.thumbsDownView);
-        img.setOnClickListener(new OnClickListener() {
-            public void onClick(View v) {
-                ViewGroup viewGroup=(ViewGroup)v.getParent();
-                TextView tv = (TextView)viewGroup.findViewById(R.id.downTextView);
-                int votes = Integer.parseInt(downText[position]) + 1;
-                downText[position] = Integer.toString(votes);
-                tv.setText(Integer.toString(votes));
-                BasicQuery barQuery;
-                barQuery = new BasicQuery();
-                String query = "http://cise.ufl.edu/~jnassar/liquor-picker/downvote.php?id=" + dealID[position];
-                barQuery.execute(query);
-            }
-        });
+        */
 
         return rowView;
     }

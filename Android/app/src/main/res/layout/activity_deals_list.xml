@@ -10,15 +10,31 @@ android:paddingRight="@dimen/activity_horizontal_margin"
 android:paddingTop="@dimen/activity_vertical_margin"
 tools:context="srdesign.liquorpicker.DealsList" >
 
-<TextView
-    android:id="@+id/textView1"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:textSize="25dp"
-    android:textStyle="bold"
-    android:text="Deals" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Deals/Comments"
+        android:id="@+id/textView"
+        android:layout_gravity="center_horizontal" />
 
-<ListView
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/switch1"
+        android:layout_gravity="center_horizontal"
+        android:checked="false" />
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add Comment"
+        android:id="@+id/commentButton"
+        android:onClick="addComment"
+        android:layout_gravity="right" />
+
+    <ListView
     android:id="@+id/listView"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
